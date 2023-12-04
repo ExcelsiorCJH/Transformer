@@ -1,1 +1,2 @@
 jupyter-black
+gluonts==0.13.6
