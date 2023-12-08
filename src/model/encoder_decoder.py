@@ -36,8 +36,11 @@ class Decoder(nn.Module):
         self.projection = projection
 
     def forward(self, x: torch.Tensor, enc_out: torch.Tensor):
+        dec_attns, cross_attns = [], []
         for dec_layer in self.dec_layers:
-            x = dec_layer(x, enc_out)
+            x, dec_attn, cross_attn = dec_layer(x, enc_out)
+            dec_attns.append(dec_attn)
+            cross_attns.append(cross_attn)
 
         if self.norm_layer is not None:
             x = self.norm_layer(x)
@@ -45,7 +48,7 @@ class Decoder(nn.Module):
         if self.projection is not None:
             x = self.projection(x)
 
-        return x
+        return x, dec_attns, cross_attns
 
 
 class EncoderLayer(nn.Module):
@@ -107,14 +110,20 @@ class DecoderLayer(nn.Module):
         self.activation = F.relu if activation == "relu" else F.gelu
 
     def forward(self, x: torch.Tensor, enc_out: torch.Tensor):
-        x = x + self.dropout(self.self_attention(queries=x, keys=x, values=x)[0])
+        # 1. compute self attention
+        new_x, dec_attn = self.self_attention(queries=x, keys=x, values=x)
+        x = x + self.dropout(new_x)
         x = self.norm1(x)
 
-        x = x + self.dropout(
-            self.cross_attention(queries=x, keys=enc_out, values=enc_out)[0]
+        # 2. compute cross attention
+        new_x, cross_attn = self.cross_attention(
+            queries=x, keys=enc_out, values=enc_out
         )
+        x = x + self.dropout(new_x)
         y = x = self.norm2(x)
+
+        # 3. positionwise feed forward
         y = self.dropout(self.activation(self.conv1(y.transpose(-1, 1))))
         y = self.dropout(self.conv2(y).transpose(-1, 1))
 
-        return self.norm3(x + y)
+        return self.norm3(x + y), dec_attn, cross_attn
