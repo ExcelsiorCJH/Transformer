@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .embeddings import DataEmbedding
 from .attention import Attention
@@ -131,6 +132,48 @@ class Transformer(nn.Module):
 
         return return_dict
 
+    def imputation(self, past_values: torch.Tensor, past_time_features: torch.Tensor):
+        enc_out = self.enc_embedding(x=past_values, x_features=past_time_features)
+        enc_out, enc_attns = self.encoder(enc_out)
+
+        dec_out = self.projection(enc_out)
+
+        return_dict = {"last_hidden_states": dec_out}
+        if self.output_attention:
+            return_dict["encoder_attentions"] = enc_attns
+
+        return return_dict
+
+    def anomaly_detection(self, past_values: torch.Tensor):
+        enc_out = self.enc_embedding(past_values, None)
+        enc_out, enc_attns = self.encoder(enc_out, attn_mask=None)
+
+        dec_out = self.projection(enc_out)
+
+        return_dict = {"last_hidden_states": dec_out}
+        if self.output_attention:
+            return_dict["encoder_attentions"] = enc_attns
+
+        return return_dict
+
+    def classification(
+        self, past_values: torch.Tensor, past_time_features: torch.Tensor
+    ):
+        enc_out = self.enc_embedding(past_values, None)
+        enc_out, enc_attns = self.encoder(enc_out, attn_mask=None)
+
+        output = F.gelu(enc_out)
+        output = self.dropout(output)
+        output = output * past_time_features.unsqueeze(-1)
+        output = output.reshape(output.shape[0], -1)
+        output = self.projection(output)
+
+        return_dict = {"last_hidden_states": output}
+        if self.output_attention:
+            return_dict["encoder_attentions"] = enc_attns
+
+        return return_dict
+
     def forward(
         self,
         past_values: torch.Tensor,
@@ -146,4 +189,11 @@ class Transformer(nn.Module):
                 past_values, past_time_features, future_values, future_time_features
             )
 
-            return output
+        elif self.task_name == "imputation":
+            output = self.imputation(past_values, past_time_features)
+        elif self.task_name == "classification":
+            output = self.classification(past_values, past_time_features)
+        elif self.task_name == "anomaly_detection":
+            output = self.anomaly_detection(past_values, past_time_features)
+
+        return output
