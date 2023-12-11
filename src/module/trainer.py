@@ -12,7 +12,7 @@ import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.auto import tqdm
 
-from .utils import AverageMeter
+from .utils import AverageMeter, EarlyStopping
 
 
 class Trainer:
@@ -42,6 +42,9 @@ class Trainer:
 
         # criterion
         self.criterion = nn.MSELoss()
+
+        # early-stopping
+        self.early_stopping = EarlyStopping(config.train.patience)
 
         # model-saving options
         self.version = 0
@@ -84,31 +87,35 @@ class Trainer:
         lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
             mode="min",
-            patience=self.config.train.patience,
+            patience=self.config.train.lr_patience,
             factor=self.config.train.factor,
         )
         return optimizer, lr_scheduler
 
     def save_checkpoint(
-        self,
-        epoch: int,
-        val_loss: float,
-        model: nn.Module,
+        self, epoch: int, val_loss: float, model: nn.Module, save_last: bool = False
     ) -> None:
-        logging.info(
-            f"Val loss decreased ({self.global_val_loss:.4f} → {val_loss:.4f}). Saving model ..."
-        )
-        self.global_val_loss = val_loss
+        if save_last:
+            logging.info(f"Save last trained model at {val_loss:.4f}. Saving model ...")
 
-        ckpt_path = os.path.join(self.save_path, f"epoch_{epoch}_{val_loss:.4f}.pt")
+            ckpt_path = os.path.join(
+                self.save_path, f"epoch_last_{epoch}_{val_loss:.4f}.pt"
+            )
+        else:
+            logging.info(
+                f"Val loss decreased ({self.global_val_loss:.4f} → {val_loss:.4f}). Saving model ..."
+            )
+            self.global_val_loss = val_loss
 
-        save_top_k = self.config.train.save_top_k
-        self.ckpt_paths.append(ckpt_path)
-        if save_top_k < len(self.ckpt_paths):
-            for path in self.ckpt_paths[:-save_top_k]:
-                os.remove(path)
+            ckpt_path = os.path.join(self.save_path, f"epoch_{epoch}_{val_loss:.4f}.pt")
 
-            self.ckpt_paths = self.ckpt_paths[-save_top_k:]
+            save_top_k = self.config.train.save_top_k
+            self.ckpt_paths.append(ckpt_path)
+            if save_top_k < len(self.ckpt_paths):
+                for path in self.ckpt_paths[:-save_top_k]:
+                    os.remove(path)
+
+                self.ckpt_paths = self.ckpt_paths[-save_top_k:]
 
         torch.save(model.state_dict(), ckpt_path)
 
@@ -121,7 +128,16 @@ class Trainer:
             if result["val_loss"] < self.global_val_loss:
                 self.save_checkpoint(epoch, result["val_loss"], self.model)
 
+            # early stop check
+            self.early_stopping(result["val_loss"], logging)
+            if self.early_stopping.early_stop:
+                logging.info("Early Stopping")
+                break
+
             self.lr_scheduler.step(result["val_loss"])
+
+        if self.config.train.save_last:
+            self.save_checkpoint(epoch, result["val_loss"], self.model, save_last=True)
 
         self.summarywriter.close()
         return self.version

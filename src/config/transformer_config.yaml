@@ -35,11 +35,13 @@ model:
 train:
   seed: 42
   learning_rate: 1e-4
-  patience: 1
+  lr_patience: 3
   factor: 0.8
   epochs: 20
   ckpt_dir: "src/exp"
+  patience: 3
   save_top_k: 3
+  save_last: true
   eval_step: 50
 
 cuda:
