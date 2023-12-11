@@ -1,0 +1,47 @@
+dm:
+  dataset_name: "ETT"
+  data_path: "data/ETT-small/ETTh1.csv"
+  task_type: "M"
+  freq: "h"
+  target: "OT"
+  seq_len: 96
+  label_len: 48
+  pred_len: 96
+  use_scaler: true
+  use_time_enc: true
+  batch_size: 32
+
+model:
+  task_name: "long_term_forecast"
+  pred_len: 96
+  enc_in: 7
+  dec_in: 7
+  c_out: 7
+  d_model: 512
+  embed_type: "time_features"
+  freq: "h"
+  dropout: 0.1
+  n_heads: 8
+  d_keys: null
+  d_values: null
+  d_ff: 2048
+  scale: null
+  attention_dropout: 0.1
+  output_attention: true
+  activation: "gelu"
+  num_enc_layers: 2
+  num_dec_layers: 1
+
+train:
+  seed: 42
+  learning_rate: 1e-4
+  patience: 1
+  factor: 0.8
+  epochs: 20
+  ckpt_dir: "src/exp"
+  save_top_k: 3
+  eval_step: 50
+
+cuda:
+  use_multi_gpu: true
+  use_amp: true

@@ -8,6 +8,7 @@ from .preprocess import load_data, trn_val_tst_split
 class ETTDataModule:
     def __init__(
         self,
+        dataset_name: str,
         data_path: str,
         task_type: str = "M",
         freq: str = "h",
@@ -19,6 +20,7 @@ class ETTDataModule:
         use_time_enc: bool = True,
         batch_size: int = 32,
     ):
+        self.dataset_name = dataset_name
         self.data_path = data_path
         self.task_type = task_type
         self.freq = freq
