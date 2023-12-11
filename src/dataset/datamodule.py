@@ -9,7 +9,7 @@ class ETTDataModule:
     def __init__(
         self,
         data_path: str,
-        task: str = "M",
+        task_type: str = "M",
         freq: str = "h",
         target: str = "OT",
         seq_len: int = 96,
@@ -20,7 +20,7 @@ class ETTDataModule:
         batch_size: int = 32,
     ):
         self.data_path = data_path
-        self.task = task
+        self.task_type = task_type
         self.freq = freq
         self.target = target
         self.seq_len = seq_len
@@ -44,7 +44,7 @@ class ETTDataModule:
         self.setup()
 
     def setup(self):
-        df = load_data(self.data_path, task=self.task, target=self.target)
+        df = load_data(self.data_path, task_type=self.task_type, target=self.target)
         data_dict = trn_val_tst_split(df, self.split_idx_dict, self.scaler)
 
         self.trainset = ETTDataset(

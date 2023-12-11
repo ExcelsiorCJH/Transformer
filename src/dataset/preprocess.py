@@ -4,12 +4,12 @@ import pandas as pd
 from gluonts.time_feature import time_features_from_frequency_str
 
 
-def load_data(data_path: str, task: str, target: str) -> pd.DataFrame:
+def load_data(data_path: str, task_type: str, target: str) -> pd.DataFrame:
     df = pd.read_csv(data_path)
     df["date"] = pd.to_datetime(df["date"])
     df = df.set_index("date")
 
-    if task == "S":
+    if task_type == "S":
         df = df[[target]]
 
     return df
