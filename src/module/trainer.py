@@ -68,7 +68,7 @@ class Trainer:
 
         if self.dm.scaler is not None:
             scaler_path = os.path.join(self.save_path, "data_scaler.pkl")
-            with open(scaler_path, 'wb') as f:
+            with open(scaler_path, "wb") as f:
                 dill.dump(self.dm.scaler, f)
 
         self.global_step = 0
@@ -123,7 +123,10 @@ class Trainer:
 
                 self.ckpt_paths = self.ckpt_paths[-save_top_k:]
 
-        torch.save(model.state_dict(), ckpt_path)
+        if self.config.cuda.use_multi_gpu:
+            torch.save(model.module.state_dict(), ckpt_path)
+        else:
+            torch.save(model.state_dict(), ckpt_path)
 
     def fit(self) -> dict:
         for epoch in tqdm(range(self.config.train.epochs), desc="epoch"):

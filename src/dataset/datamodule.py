@@ -88,5 +88,5 @@ class ETTDataModule:
 
     def test_dataloader(self):
         return DataLoader(
-            self.valset, batch_size=self.batch_size, shuffle=False, drop_last=False
+            self.valset, batch_size=1, shuffle=False, drop_last=False
         )
