@@ -29,7 +29,7 @@ def trn_val_tst_split(
         s_idx, e_idx = split_idx_dict[stage]
         data_dict[stage] = df[s_idx:e_idx]
 
-    return data_dict
+    return data_dict, scaler
 
 
 def get_stamp_data(df: pd.DataFrame, use_time_enc: bool = True, freq: str = "h"):

@@ -47,7 +47,7 @@ class ETTDataModule:
 
     def setup(self):
         df = load_data(self.data_path, task_type=self.task_type, target=self.target)
-        data_dict = trn_val_tst_split(df, self.split_idx_dict, self.scaler)
+        data_dict, self.scaler = trn_val_tst_split(df, self.split_idx_dict, self.scaler)
 
         self.trainset = ETTDataset(
             data_dict["train"],

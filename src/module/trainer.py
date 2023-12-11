@@ -3,6 +3,7 @@ import itertools
 import logging
 
 import yaml
+import dill
 import omegaconf
 
 import torch
@@ -64,6 +65,11 @@ class Trainer:
             else:
                 self.version += 1
         self.summarywriter = SummaryWriter(self.save_path)
+
+        if self.dm.scaler is not None:
+            scaler_path = os.path.join(self.save_path, "data_scaler.pkl")
+            with open(scaler_path, 'wb') as f:
+                dill.dump(self.dm.scaler, f)
 
         self.global_step = 0
         self.global_val_loss = 1e5
