@@ -13,8 +13,6 @@ class Transformer(nn.Module):
         self,
         task_name: str = "long_term_forecast",
         pred_len: int = 96,
-        seq_len: int = None,
-        num_class: int = None,
         enc_in: int = 7,
         dec_in: int = 7,
         c_out: int = 7,
@@ -105,11 +103,6 @@ class Transformer(nn.Module):
                 norm_layer=nn.LayerNorm(d_model),
                 projection=nn.Linear(d_model, c_out),
             )
-        elif self.task_name == "imputation" or self.task_name == "anomaly_detection":
-            self.projection = nn.Linear(d_model, c_out)
-        elif self.task_name == "classification":
-            self.dropout = nn.Dropout(dropout)
-            self.projection = nn.Linear(d_model * seq_len, num_class)
 
     def forecast(
         self,
