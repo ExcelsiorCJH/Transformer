@@ -2,7 +2,7 @@
 
 **Transformer: Vanilla Transformer for Time Series Forecasting**
 
-![]('./img/transformer.png)
+![](./img/transformer.png)
 
 ## Usage
 
