@@ -6,6 +6,8 @@ import omegaconf
 import numpy as np
 
 from tqdm.auto import tqdm
+from torchmetrics.regression import MeanAbsoluteError, MeanSquaredError
+
 from .dataset import ETTDataModule
 from .model import Transformer
 from .module import Trainer
@@ -134,6 +136,20 @@ def test(config, dm, model) -> None:
 
     predicts = predicts.squeeze(1)
     targets = targets.squeeze(1)
+
+    np.save(os.path.join(save_path, "predicts.npy"), predicts)
+    np.save(os.path.join(save_path, "targets.npy"), targets)
+
+    mean_absolute_error = MeanAbsoluteError()
+    mean_squared_error = MeanSquaredError()
+    mae = mean_absolute_error(torch.tensor(predicts), torch.tensor(targets)).item()
+    mse = mean_squared_error(torch.tensor(predicts), torch.tensor(targets)).item()
+
+    f = open(os.path.join(save_path, "result_metric.txt"), "w")
+    f.write(f"Test Results >>> MSE: {mse}, MAE: {mae}")
+    f.close()
+
+    print(f"Test Results >>> MSE: {mse}, MAE: {mae}")
 
 
 if __name__ == "__main__":
