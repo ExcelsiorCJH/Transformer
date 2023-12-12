@@ -1,6 +1,10 @@
+import os
+import glob
 import random
 
 import numpy as np
+import matplotlib.pyplot as plt
+
 import torch
 import torch.distributed as dist
 
@@ -13,6 +17,35 @@ def fix_seed(seed: int) -> None:
     torch.backends.cudnn.benchmark = False
     np.random.seed(seed)
     random.seed(seed)
+
+
+def load_trained_model(config):
+    version = config.version
+    dataset_name = config.dm.dataset_name
+    task_name = config.model.task_name
+
+    ckpt_list = glob.glob(
+        os.path.join(
+            config.train.ckpt_dir,
+            f"version-{version}-{task_name}-{dataset_name.lower()}/*.pt",
+        )
+    )
+    ckpt_list = sorted(ckpt_list, key=lambda e: e.split("_")[-1], reverse=True)
+
+    state_dict = torch.load(ckpt_list[-1])
+    return state_dict
+
+
+def plot(true, preds=None, fname="./pic/test.pdf"):
+    """
+    Results visualization
+    """
+    plt.figure()
+    plt.plot(true, label="GroundTruth", linewidth=2)
+    if preds is not None:
+        plt.plot(preds, label="Prediction", linewidth=2)
+    plt.legend()
+    plt.savefig(fname, bbox_inches="tight")
 
 
 class AverageMeter:

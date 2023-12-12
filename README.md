@@ -14,10 +14,10 @@ pip install -r requirements.txt
 
 2. Prepare Dataset. Download the [ETT Dataset](https://github.com/zhouhaoyi/ETDataset) and place the downloaded data in `./data` directory.
 
-3. Train model.
+3. Train & Test
 
 ```
-python -m src.train
+python -m src.main
 ```
 
 ## Reference
